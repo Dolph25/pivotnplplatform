@@ -3,6 +3,10 @@ import mapboxgl from 'mapbox-gl';
 // Google Maps API Key
 export const GOOGLE_MAPS_API_KEY = 'AIzaSyDaDC8cgO8moRKDJn5w7k1Vyiw2gUmu1I8';
 
+// Mapbox API Key
+export const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoiZmFzdGNhc2hvZmZlcm55IiwiYSI6ImNtanBiZjgwNDJmOGkzam9qYWp0Mm0xODEifQ.skZbvnJQpuMnZsSIA33saw';
+mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
+
 export const initializeMap = (
   container: string | HTMLElement,
   options?: Partial<mapboxgl.MapboxOptions>
