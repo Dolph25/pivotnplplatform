@@ -1,5 +1,8 @@
 import mapboxgl from 'mapbox-gl';
 
+// Google Maps API Key
+export const GOOGLE_MAPS_API_KEY = 'AIzaSyDaDC8cgO8moRKDJn5w7k1Vyiw2gUmu1I8';
+
 export const initializeMap = (
   container: string | HTMLElement,
   options?: Partial<mapboxgl.MapboxOptions>
