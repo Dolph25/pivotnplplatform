@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CheckCircle2, XCircle, Loader2, BadgeCheck, Crown } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, BadgeCheck, Crown, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface FormData {
@@ -95,19 +95,32 @@ export function InvestorQualificationForm() {
         <CardContent className="pt-8 pb-8 text-center">
           {qualified ? (
             <div className="space-y-4">
-              <div className="w-16 h-16 mx-auto rounded-full bg-primary/20 flex items-center justify-center">
-                <CheckCircle2 className="w-10 h-10 text-primary" />
+              <div className="w-16 h-16 mx-auto rounded-full bg-emerald-500/20 flex items-center justify-center">
+                <CheckCircle2 className="w-10 h-10 text-emerald-400" />
               </div>
-              <h3 className="text-2xl font-bold text-foreground">You're Qualified!</h3>
+              <h3 className="text-2xl font-bold text-emerald-400">Congratulations! You're Qualified</h3>
               {parseInt(formData.investmentAmount) >= 250000 && (
                 <div className="flex items-center justify-center gap-2 text-amber-400">
                   <Crown className="w-5 h-5" />
                   <span className="font-semibold">VIP LP Status - Pivot Platform Beta Unlocked!</span>
                 </div>
               )}
-              <p className="text-muted-foreground">
-                Welcome to our exclusive investor community. Our team will contact you within 24 hours to discuss investment opportunities.
+              <p className="text-lg text-muted-foreground">
+                {parseInt(formData.investmentAmount) >= 250000
+                  ? "You qualify for VIP LP status with Pivot Platform beta access!"
+                  : "You qualify for our LP program!"}
               </p>
+              
+              <a
+                href="https://calendly.com/nyshortsaleassist"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 rounded-lg font-bold text-lg transition-all w-full"
+              >
+                <Calendar className="w-5 h-5" />
+                Schedule Your Strategy Call Now
+              </a>
+
               <div className="pt-4 space-y-2 text-sm text-left bg-muted/30 rounded-lg p-4">
                 <p className="font-medium text-foreground">Your Benefits Include:</p>
                 <ul className="space-y-1 text-muted-foreground">
