@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import Import from "./pages/Import";
 import Documents from "./pages/Documents";
 import Portfolio from "./pages/Portfolio";
+import Invest from "./pages/Invest";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -20,7 +21,9 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={<Invest />} />
+          <Route path="/analyze" element={<Index />} />
+          <Route path="/invest" element={<Invest />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/import" element={<Import />} />
