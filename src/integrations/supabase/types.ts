@@ -224,6 +224,63 @@ export type Database = {
           },
         ]
       }
+      investor_leads: {
+        Row: {
+          accredited_status: string | null
+          converted_to_lp: boolean | null
+          created_at: string | null
+          email: string
+          experience: string | null
+          id: string
+          investment_amount: number | null
+          investment_tier: string | null
+          last_contact_date: string | null
+          name: string
+          notes: string | null
+          phone: string | null
+          qualified: boolean | null
+          source: string | null
+          status: string | null
+          timeline: string | null
+        }
+        Insert: {
+          accredited_status?: string | null
+          converted_to_lp?: boolean | null
+          created_at?: string | null
+          email: string
+          experience?: string | null
+          id?: string
+          investment_amount?: number | null
+          investment_tier?: string | null
+          last_contact_date?: string | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          qualified?: boolean | null
+          source?: string | null
+          status?: string | null
+          timeline?: string | null
+        }
+        Update: {
+          accredited_status?: string | null
+          converted_to_lp?: boolean | null
+          created_at?: string | null
+          email?: string
+          experience?: string | null
+          id?: string
+          investment_amount?: number | null
+          investment_tier?: string | null
+          last_contact_date?: string | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          qualified?: boolean | null
+          source?: string | null
+          status?: string | null
+          timeline?: string | null
+        }
+        Relationships: []
+      }
       investors: {
         Row: {
           accreditation_type: string | null
@@ -676,6 +733,16 @@ export type Database = {
       }
     }
     Views: {
+      investor_metrics: {
+        Row: {
+          converted_count: number | null
+          qualified_count: number | null
+          total_committed: number | null
+          total_leads: number | null
+          vip_count: number | null
+        }
+        Relationships: []
+      }
       v_deal_pipeline: {
         Row: {
           avg_irr: number | null
@@ -698,6 +765,63 @@ export type Database = {
           total_properties: number | null
           total_strike_price: number | null
           total_upb: number | null
+        }
+        Relationships: []
+      }
+      vip_qualified_leads: {
+        Row: {
+          accredited_status: string | null
+          converted_to_lp: boolean | null
+          created_at: string | null
+          email: string | null
+          experience: string | null
+          id: string | null
+          investment_amount: number | null
+          investment_tier: string | null
+          last_contact_date: string | null
+          name: string | null
+          notes: string | null
+          phone: string | null
+          qualified: boolean | null
+          source: string | null
+          status: string | null
+          timeline: string | null
+        }
+        Insert: {
+          accredited_status?: string | null
+          converted_to_lp?: boolean | null
+          created_at?: string | null
+          email?: string | null
+          experience?: string | null
+          id?: string | null
+          investment_amount?: number | null
+          investment_tier?: string | null
+          last_contact_date?: string | null
+          name?: string | null
+          notes?: string | null
+          phone?: string | null
+          qualified?: boolean | null
+          source?: string | null
+          status?: string | null
+          timeline?: string | null
+        }
+        Update: {
+          accredited_status?: string | null
+          converted_to_lp?: boolean | null
+          created_at?: string | null
+          email?: string | null
+          experience?: string | null
+          id?: string | null
+          investment_amount?: number | null
+          investment_tier?: string | null
+          last_contact_date?: string | null
+          name?: string | null
+          notes?: string | null
+          phone?: string | null
+          qualified?: boolean | null
+          source?: string | null
+          status?: string | null
+          timeline?: string | null
         }
         Relationships: []
       }
