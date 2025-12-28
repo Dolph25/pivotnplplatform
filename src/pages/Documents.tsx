@@ -10,7 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Upload, FileText, ArrowLeft, Trash2, Download, 
-  Loader2, File, Image, FileSpreadsheet 
+  Loader2, File, Image, FileSpreadsheet, Calendar, CreditCard, 
+  Phone, Mail, MapPin 
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -261,6 +262,59 @@ const Documents = () => {
                 })}
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Access Full Documentation CTA */}
+        <Card className="bg-gradient-to-br from-primary/10 to-card border-primary/30 mt-8">
+          <CardContent className="pt-6 pb-6">
+            <div className="text-center space-y-4">
+              <h3 className="text-2xl font-bold text-foreground">Access Full Documentation</h3>
+              <p className="text-muted-foreground max-w-xl mx-auto">
+                Complete PPM, capital stack details, and portfolio access available after strategy call or deposit submission.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+                <a
+                  href="https://calendly.com/nyshortsaleassist"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button size="lg" className="gap-2 w-full sm:w-auto">
+                    <Calendar className="w-5 h-5" />
+                    Schedule Strategy Call
+                  </Button>
+                </a>
+                <a
+                  href="https://www.paypal.com/ncp/payment/D5X6K7K2QEWYQ"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button size="lg" variant="outline" className="gap-2 border-primary/50 hover:bg-primary/10 w-full sm:w-auto">
+                    <CreditCard className="w-5 h-5" />
+                    Submit Reservation Deposit
+                  </Button>
+                </a>
+              </div>
+
+              <div className="pt-6 text-sm text-muted-foreground space-y-1">
+                <p className="font-medium text-foreground">Contact: Adolph T. Littlejohn</p>
+                <div className="flex flex-wrap items-center justify-center gap-4">
+                  <span className="flex items-center gap-1">
+                    <Phone className="w-4 h-4" />
+                    631-575-7933
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Mail className="w-4 h-4" />
+                    nyshortsaleassist@gmail.com
+                  </span>
+                </div>
+                <p className="flex items-center justify-center gap-1">
+                  <MapPin className="w-4 h-4" />
+                  34 E Main St #448, Smithtown, NY 11788
+                </p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </main>
