@@ -2,3 +2,6 @@ project_id = "pxmibkknptxuyjltordz"
 
 [functions.analyze-deal]
 verify_jwt = false
+
+[functions.generate-property-description]
+verify_jwt = false
