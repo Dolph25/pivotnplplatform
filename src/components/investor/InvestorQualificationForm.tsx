@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CheckCircle2, XCircle, Loader2, BadgeCheck, Crown, Calendar } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, BadgeCheck, Crown, Calendar, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface FormData {
@@ -111,15 +111,35 @@ export function InvestorQualificationForm() {
                   : "You qualify for our LP program!"}
               </p>
               
-              <a
-                href="https://calendly.com/nyshortsaleassist"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 rounded-lg font-bold text-lg transition-all w-full"
-              >
-                <Calendar className="w-5 h-5" />
-                Schedule Your Strategy Call Now
-              </a>
+              <div className="flex flex-col gap-3">
+                <a
+                  href="https://calendly.com/nyshortsaleassist"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 rounded-lg font-bold text-lg transition-all w-full"
+                >
+                  <Calendar className="w-5 h-5" />
+                  Schedule Strategy Call
+                </a>
+                
+                {parseInt(formData.investmentAmount) >= 250000 && (
+                  <a
+                    href="https://www.paypal.com/ncp/payment/D5X6K7K2QEWYQ"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-primary hover:from-purple-700 hover:to-primary/90 text-white px-8 py-4 rounded-lg font-bold text-lg transition-all w-full border border-purple-400/30"
+                  >
+                    <CreditCard className="w-5 h-5" />
+                    Reserve VIP Spot ($5K Deposit)
+                  </a>
+                )}
+              </div>
+
+              <p className="text-sm text-muted-foreground">
+                {parseInt(formData.investmentAmount) >= 250000
+                  ? "Deposits are refundable and credited toward final investment. Secures your VIP platform access."
+                  : "Schedule your call to review investment documents and next steps."}
+              </p>
 
               <div className="pt-4 space-y-2 text-sm text-left bg-muted/30 rounded-lg p-4">
                 <p className="font-medium text-foreground">Your Benefits Include:</p>
