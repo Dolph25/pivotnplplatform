@@ -14,7 +14,93 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      saved_deals: {
+        Row: {
+          address: string
+          ai_insights: string | null
+          bpo_value: number
+          created_at: string
+          exit_strategy: string
+          hold_period: number
+          id: string
+          irr: number | null
+          latitude: number | null
+          longitude: number | null
+          profit: number | null
+          property_type: string
+          rehab_costs: number
+          roi: number | null
+          sale_price: number
+          strike_price: number
+          units: number
+          updated_at: string
+          user_id: string
+          verdict: string | null
+        }
+        Insert: {
+          address: string
+          ai_insights?: string | null
+          bpo_value: number
+          created_at?: string
+          exit_strategy: string
+          hold_period: number
+          id?: string
+          irr?: number | null
+          latitude?: number | null
+          longitude?: number | null
+          profit?: number | null
+          property_type: string
+          rehab_costs: number
+          roi?: number | null
+          sale_price: number
+          strike_price: number
+          units?: number
+          updated_at?: string
+          user_id: string
+          verdict?: string | null
+        }
+        Update: {
+          address?: string
+          ai_insights?: string | null
+          bpo_value?: number
+          created_at?: string
+          exit_strategy?: string
+          hold_period?: number
+          id?: string
+          irr?: number | null
+          latitude?: number | null
+          longitude?: number | null
+          profit?: number | null
+          property_type?: string
+          rehab_costs?: number
+          roi?: number | null
+          sale_price?: number
+          strike_price?: number
+          units?: number
+          updated_at?: string
+          user_id?: string
+          verdict?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
