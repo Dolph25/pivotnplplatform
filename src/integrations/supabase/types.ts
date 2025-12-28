@@ -229,6 +229,9 @@ export type Database = {
           accredited_status: string | null
           converted_to_lp: boolean | null
           created_at: string | null
+          deposit_amount: number | null
+          deposit_date: string | null
+          deposit_submitted: boolean | null
           email: string
           experience: string | null
           id: string
@@ -247,6 +250,9 @@ export type Database = {
           accredited_status?: string | null
           converted_to_lp?: boolean | null
           created_at?: string | null
+          deposit_amount?: number | null
+          deposit_date?: string | null
+          deposit_submitted?: boolean | null
           email: string
           experience?: string | null
           id?: string
@@ -265,6 +271,9 @@ export type Database = {
           accredited_status?: string | null
           converted_to_lp?: boolean | null
           created_at?: string | null
+          deposit_amount?: number | null
+          deposit_date?: string | null
+          deposit_submitted?: boolean | null
           email?: string
           experience?: string | null
           id?: string
@@ -733,6 +742,72 @@ export type Database = {
       }
     }
     Views: {
+      deposited_vip_leads: {
+        Row: {
+          accredited_status: string | null
+          converted_to_lp: boolean | null
+          created_at: string | null
+          deposit_amount: number | null
+          deposit_date: string | null
+          deposit_submitted: boolean | null
+          email: string | null
+          experience: string | null
+          id: string | null
+          investment_amount: number | null
+          investment_tier: string | null
+          last_contact_date: string | null
+          name: string | null
+          notes: string | null
+          phone: string | null
+          qualified: boolean | null
+          source: string | null
+          status: string | null
+          timeline: string | null
+        }
+        Insert: {
+          accredited_status?: string | null
+          converted_to_lp?: boolean | null
+          created_at?: string | null
+          deposit_amount?: number | null
+          deposit_date?: string | null
+          deposit_submitted?: boolean | null
+          email?: string | null
+          experience?: string | null
+          id?: string | null
+          investment_amount?: number | null
+          investment_tier?: string | null
+          last_contact_date?: string | null
+          name?: string | null
+          notes?: string | null
+          phone?: string | null
+          qualified?: boolean | null
+          source?: string | null
+          status?: string | null
+          timeline?: string | null
+        }
+        Update: {
+          accredited_status?: string | null
+          converted_to_lp?: boolean | null
+          created_at?: string | null
+          deposit_amount?: number | null
+          deposit_date?: string | null
+          deposit_submitted?: boolean | null
+          email?: string | null
+          experience?: string | null
+          id?: string | null
+          investment_amount?: number | null
+          investment_tier?: string | null
+          last_contact_date?: string | null
+          name?: string | null
+          notes?: string | null
+          phone?: string | null
+          qualified?: boolean | null
+          source?: string | null
+          status?: string | null
+          timeline?: string | null
+        }
+        Relationships: []
+      }
       investor_metrics: {
         Row: {
           converted_count: number | null
