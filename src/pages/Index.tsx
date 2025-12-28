@@ -11,45 +11,40 @@ import { EmptyState } from '@/components/EmptyState';
 import { DealData, AnalysisResult, RiskFactor } from '@/types/deal';
 import { calculateMetrics, getVerdict, calculateRiskFactors } from '@/utils/calculations';
 import { exampleDeal } from '@/utils/exampleDeal';
+import { useAIAnalysis } from '@/hooks/useAIAnalysis';
 
 const Index = () => {
   const [dealData, setDealData] = useState<DealData>(exampleDeal);
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [riskFactors, setRiskFactors] = useState<RiskFactor[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  
+  const { analyzeWithAI, isLoading, insights } = useAIAnalysis();
 
   const currentMetrics = calculateMetrics(dealData);
 
-  const generateMockAIInsights = (data: DealData, metrics: ReturnType<typeof calculateMetrics>): string => {
-    const verdict = getVerdict(metrics.roi);
-    
-    const insights = {
-      buy: `This ${data.propertyType.toLowerCase()} in ${data.address.split(',').slice(-2).join(',')} presents a compelling investment opportunity with a ${metrics.discount.toFixed(1)}% discount to BPO. The ${metrics.roi.toFixed(1)}% projected ROI significantly exceeds typical market returns, supported by conservative rehab estimates and realistic exit pricing. Strong fundamentals and favorable LTV positioning make this a STRONG BUY recommendation for institutional capital deployment.`,
-      consider: `The property at ${data.address.split(',')[0]} offers moderate upside with ${metrics.roi.toFixed(1)}% ROI potential. While the ${metrics.discount.toFixed(1)}% discount provides some margin of safety, the ${data.holdPeriod}-month timeline and ${data.exitStrategy.toLowerCase()} exit strategy carry execution risks. Consider proceeding with enhanced due diligence on renovation scope and local market conditions before commitment.`,
-      pass: `Current deal metrics suggest caution. With only ${metrics.roi.toFixed(1)}% projected ROI and ${metrics.discount.toFixed(1)}% discount to BPO, risk-adjusted returns appear insufficient. The ${data.holdPeriod}-month hold period and substantial rehab requirements increase execution risk without commensurate upside. Recommend passing unless strike price can be renegotiated by 15-20%.`
-    };
-
-    return insights[verdict];
-  };
-
   const handleAnalyze = async () => {
-    setIsLoading(true);
-    
-    // Simulate AI processing time
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
     const metrics = calculateMetrics(dealData);
     const verdict = getVerdict(metrics.roi);
-    const insights = generateMockAIInsights(dealData, metrics);
     const risks = calculateRiskFactors(dealData, metrics);
     
+    // Set analysis immediately with empty insights
     setAnalysis({
       metrics,
-      insights,
+      insights: '',
       verdict
     });
     setRiskFactors(risks);
-    setIsLoading(false);
+
+    try {
+      const aiInsights = await analyzeWithAI(dealData);
+      setAnalysis(prev => prev ? { ...prev, insights: aiInsights } : null);
+    } catch {
+      // Error already handled in hook with toast
+      setAnalysis(prev => prev ? { 
+        ...prev, 
+        insights: 'AI analysis unavailable. Review the calculated metrics above for your investment decision.' 
+      } : null);
+    }
   };
 
   const handleReset = () => {
@@ -57,6 +52,9 @@ const Index = () => {
     setAnalysis(null);
     setRiskFactors([]);
   };
+
+  // Use streaming insights while loading, otherwise use saved analysis
+  const displayInsights = isLoading ? insights : (analysis?.insights || '');
 
   return (
     <div className="min-h-screen bg-background">
@@ -103,14 +101,14 @@ const Index = () => {
                 <MetricsGrid metrics={analysis.metrics} />
 
                 {/* AI Insights */}
-                <AIInsightsPanel insights={analysis.insights} isLoading={isLoading} />
+                <AIInsightsPanel insights={displayInsights} isLoading={isLoading} />
 
                 {/* Analysis Tabs */}
                 <AnalysisTabs
                   dealData={dealData}
                   metrics={analysis.metrics}
                   riskFactors={riskFactors}
-                  insights={analysis.insights}
+                  insights={displayInsights}
                 />
               </>
             ) : (
@@ -127,7 +125,7 @@ const Index = () => {
         <div className="container mx-auto px-6 text-center text-sm text-muted-foreground">
           <p>
             © 2024 Pivot Investments • LJ Integrated AI AutoAgents • 
-            <span className="text-primary ml-1">Powered by Gemini 2.0 Flash & Mapbox 3.2</span>
+            <span className="text-primary ml-1">Powered by Gemini 2.5 Flash & Mapbox 3.2</span>
           </p>
         </div>
       </footer>
