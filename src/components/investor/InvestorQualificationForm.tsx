@@ -50,7 +50,7 @@ export function InvestorQualificationForm() {
     const investmentAmount = parseInt(formData.investmentAmount) || 0;
     const hasMinInvestment = investmentAmount >= 50000;
     const isQualified = isAccredited && hasMinInvestment;
-    const isVIP = isQualified && investmentAmount >= 500000;
+    const isVIP = isQualified && investmentAmount >= 250000;
 
     setQualified(isQualified);
 
@@ -99,10 +99,10 @@ export function InvestorQualificationForm() {
                 <CheckCircle2 className="w-10 h-10 text-primary" />
               </div>
               <h3 className="text-2xl font-bold text-foreground">You're Qualified!</h3>
-              {parseInt(formData.investmentAmount) >= 500000 && (
+              {parseInt(formData.investmentAmount) >= 250000 && (
                 <div className="flex items-center justify-center gap-2 text-amber-400">
                   <Crown className="w-5 h-5" />
-                  <span className="font-semibold">VIP LP Status</span>
+                  <span className="font-semibold">VIP LP Status - Pivot Platform Beta Unlocked!</span>
                 </div>
               )}
               <p className="text-muted-foreground">
