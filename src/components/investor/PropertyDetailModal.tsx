@@ -31,6 +31,7 @@ import { formatCurrency, formatPercent, MAPBOX_ACCESS_TOKEN, GOOGLE_MAPS_API_KEY
 
 interface Property {
   id: string;
+  property_id?: string;
   address: string;
   city?: string;
   state?: string;
@@ -44,14 +45,41 @@ interface Property {
   square_feet?: number | null;
   bedrooms?: number | null;
   bathrooms?: number | null;
+  lot_size?: number | null;
   bpo?: number | null;
+  arv?: number | null;
   upb?: number | null;
   strike_price?: number | null;
   ltv_ratio?: number | null;
+  discount_to_bpo?: number | null;
   deal_stage: string;
   estimated_roi?: number | null;
   estimated_irr?: number | null;
+  risk_score?: number | null;
   ai_analysis?: string | null;
+  // Loan details
+  original_loan_amount?: number | null;
+  current_interest_rate?: number | null;
+  original_interest_rate?: number | null;
+  loan_origination_date?: string | null;
+  maturity_date?: string | null;
+  last_payment_date?: string | null;
+  days_since_last_payment?: number | null;
+  lien_position?: number | null;
+  original_lender?: string | null;
+  current_servicer?: string | null;
+  // Balances
+  total_balance?: number | null;
+  accrued_interest?: number | null;
+  escrow_balance?: number | null;
+  corporate_advances?: number | null;
+  deferred_balance?: number | null;
+  // Status flags
+  occupancy_status?: string | null;
+  owner_occupied?: boolean | null;
+  foreclosure_flag?: boolean | null;
+  bankruptcy_flag?: boolean | null;
+  notes?: string | null;
 }
 
 interface PropertyDetailModalProps {
@@ -202,6 +230,7 @@ export function PropertyDetailModal({
           <TabsList className="bg-secondary/50">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="financials">Financials</TabsTrigger>
+            <TabsTrigger value="loan">Loan Details</TabsTrigger>
             <TabsTrigger value="location">Location</TabsTrigger>
           </TabsList>
 
@@ -254,8 +283,8 @@ export function PropertyDetailModal({
               />
               <DetailItem
                 icon={<Home className="w-4 h-4" />}
-                label="Units"
-                value={property.num_units?.toString() || 'N/A'}
+                label="Bed / Bath"
+                value={`${property.bedrooms || '-'} / ${property.bathrooms || '-'}`}
               />
               <DetailItem
                 icon={<Calendar className="w-4 h-4" />}
@@ -267,7 +296,35 @@ export function PropertyDetailModal({
                 label="Sq Ft"
                 value={property.square_feet?.toLocaleString() || 'N/A'}
               />
+              <DetailItem
+                icon={<Home className="w-4 h-4" />}
+                label="Units"
+                value={property.num_units?.toString() || '1'}
+              />
+              <DetailItem
+                icon={<MapPin className="w-4 h-4" />}
+                label="Occupancy"
+                value={property.occupancy_status || 'Unknown'}
+              />
+              <DetailItem
+                icon={<AlertTriangle className="w-4 h-4" />}
+                label="Foreclosure"
+                value={property.foreclosure_flag ? 'Yes' : 'No'}
+              />
+              <DetailItem
+                icon={<AlertTriangle className="w-4 h-4" />}
+                label="Bankruptcy"
+                value={property.bankruptcy_flag ? 'Yes' : 'No'}
+              />
             </div>
+
+            {/* Notes */}
+            {property.notes && (
+              <div className="bg-secondary/50 rounded-lg p-4">
+                <p className="text-xs text-muted-foreground font-medium mb-2">Notes</p>
+                <p className="text-sm">{property.notes}</p>
+              </div>
+            )}
 
             {/* Action Buttons */}
             <div className="flex flex-wrap gap-2 pt-2">
@@ -289,11 +346,119 @@ export function PropertyDetailModal({
           <TabsContent value="financials" className="space-y-4 mt-4">
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <MetricCard label="BPO Value" value={formatCurrency(property.bpo)} />
+              <MetricCard label="ARV" value={formatCurrency(property.arv)} />
+              <MetricCard label="Strike Price" value={formatCurrency(property.strike_price)} highlight />
               <MetricCard label="UPB" value={formatCurrency(property.upb)} />
-              <MetricCard label="Strike Price" value={formatCurrency(property.strike_price)} />
-              <MetricCard label="LTV Ratio" value={formatPercent(property.ltv_ratio)} />
+              <MetricCard label="Total Balance" value={formatCurrency(property.total_balance)} />
+              <MetricCard label="Discount to BPO" value={formatPercent(property.discount_to_bpo ? property.discount_to_bpo * 100 : null)} />
+              <MetricCard label="LTV Ratio" value={formatPercent(property.ltv_ratio ? property.ltv_ratio * 100 : null)} />
               <MetricCard label="Est. ROI" value={formatPercent(property.estimated_roi)} highlight />
               <MetricCard label="Est. IRR" value={formatPercent(property.estimated_irr)} highlight />
+            </div>
+
+            {/* Balance Breakdown */}
+            <div className="bg-secondary/30 rounded-lg p-4">
+              <h4 className="font-medium text-sm mb-3">Balance Breakdown</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <p className="text-xs text-muted-foreground">Accrued Interest</p>
+                  <p className="font-medium">{formatCurrency(property.accrued_interest)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Escrow Balance</p>
+                  <p className="font-medium">{formatCurrency(property.escrow_balance)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Corporate Advances</p>
+                  <p className="font-medium">{formatCurrency(property.corporate_advances)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Deferred Balance</p>
+                  <p className="font-medium">{formatCurrency(property.deferred_balance)}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Risk Score */}
+            {property.risk_score && (
+              <div className="bg-secondary/30 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Risk Score</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-32 h-2 bg-secondary rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full rounded-full ${
+                          property.risk_score <= 30 ? 'bg-green-500' :
+                          property.risk_score <= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                        }`}
+                        style={{ width: `${property.risk_score}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-bold">{property.risk_score}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="loan" className="space-y-4 mt-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <MetricCard label="Original Loan Amount" value={formatCurrency(property.original_loan_amount)} />
+              <MetricCard label="Current Interest Rate" value={formatPercent(property.current_interest_rate)} />
+              <MetricCard label="Original Interest Rate" value={formatPercent(property.original_interest_rate)} />
+              <MetricCard label="Lien Position" value={property.lien_position?.toString() || 'N/A'} />
+              <MetricCard 
+                label="Days Since Last Payment" 
+                value={property.days_since_last_payment?.toString() || 'N/A'} 
+                highlight={property.days_since_last_payment && property.days_since_last_payment > 180}
+              />
+              <MetricCard label="UPB" value={formatCurrency(property.upb)} />
+            </div>
+
+            {/* Loan Timeline */}
+            <div className="bg-secondary/30 rounded-lg p-4">
+              <h4 className="font-medium text-sm mb-3">Loan Timeline</h4>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div>
+                  <p className="text-xs text-muted-foreground">Origination Date</p>
+                  <p className="font-medium">
+                    {property.loan_origination_date 
+                      ? new Date(property.loan_origination_date).toLocaleDateString() 
+                      : 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Last Payment Date</p>
+                  <p className="font-medium">
+                    {property.last_payment_date 
+                      ? new Date(property.last_payment_date).toLocaleDateString() 
+                      : 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Maturity Date</p>
+                  <p className="font-medium">
+                    {property.maturity_date 
+                      ? new Date(property.maturity_date).toLocaleDateString() 
+                      : 'N/A'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Servicer Info */}
+            <div className="bg-secondary/30 rounded-lg p-4">
+              <h4 className="font-medium text-sm mb-3">Servicer Information</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-muted-foreground">Original Lender</p>
+                  <p className="font-medium">{property.original_lender || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Current Servicer</p>
+                  <p className="font-medium">{property.current_servicer || 'N/A'}</p>
+                </div>
+              </div>
             </div>
           </TabsContent>
 
