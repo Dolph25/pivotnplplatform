@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { formatCurrency, formatPercent, MAPBOX_ACCESS_TOKEN, GOOGLE_MAPS_API_KEY } from '@/lib/maps';
+import { formatCurrency, formatPercent, MAPBOX_ACCESS_TOKEN } from '@/lib/maps';
 
 
 interface Property {
@@ -97,6 +97,8 @@ export function PropertyDetailModal({
   const map = useRef<mapboxgl.Map | null>(null);
   const [aiDescription, setAiDescription] = useState<string>('');
   const [isLoadingAI, setIsLoadingAI] = useState(false);
+  const [streetViewUrl, setStreetViewUrl] = useState<string | null>(null);
+  const [streetViewLoading, setStreetViewLoading] = useState(true);
   const [streetViewError, setStreetViewError] = useState(false);
   const [mapError, setMapError] = useState(false);
 
@@ -138,6 +140,42 @@ export function PropertyDetailModal({
     return () => {
       map.current?.remove();
     };
+  }, [open, property]);
+
+  // Fetch street view URL
+  useEffect(() => {
+    if (!open || !property) {
+      setStreetViewLoading(false);
+      return;
+    }
+
+    const fetchStreetView = async () => {
+      setStreetViewLoading(true);
+      setStreetViewError(false);
+      try {
+        const fullAddress = `${property.address}, ${property.city}, ${property.state}`;
+        const { data, error } = await supabase.functions.invoke('get-street-view', {
+          body: { address: fullAddress, width: 600, height: 400 }
+        });
+
+        if (error) throw error;
+        
+        if (data.fallback || !data.available) {
+          setStreetViewUrl(null);
+          setStreetViewError(true);
+        } else if (data.url) {
+          setStreetViewUrl(data.url);
+        }
+      } catch (err) {
+        console.error('Street View error:', err);
+        setStreetViewError(true);
+        setStreetViewUrl(null);
+      } finally {
+        setStreetViewLoading(false);
+      }
+    };
+
+    fetchStreetView();
   }, [open, property]);
 
   useEffect(() => {
@@ -183,12 +221,6 @@ export function PropertyDetailModal({
   };
 
   if (!property) return null;
-
-  const streetViewUrl = GOOGLE_MAPS_API_KEY
-    ? `https://maps.googleapis.com/maps/api/streetview?size=600x400&location=${encodeURIComponent(
-        `${property.address}, ${property.city}, ${property.state}`
-      )}&fov=90&heading=0&pitch=0&key=${GOOGLE_MAPS_API_KEY}`
-    : null;
 
   const getStatusClass = (status: string) => {
     const classes: Record<string, string> = {
@@ -237,20 +269,44 @@ export function PropertyDetailModal({
           <TabsContent value="overview" className="space-y-4 mt-4">
             {/* Street View / Property Image */}
             <div className="rounded-lg overflow-hidden border border-border">
-              {streetViewUrl && !streetViewError ? (
-                <img
-                  src={streetViewUrl}
-                  alt={`Street view of ${property.address}`}
-                  className="w-full h-64 object-cover"
-                  onError={() => setStreetViewError(true)}
-                />
-              ) : (
-                <div className="w-full h-64 bg-secondary flex items-center justify-center">
+              {streetViewLoading ? (
+                <div className="w-full h-64 bg-secondary/50 flex items-center justify-center">
                   <div className="text-center">
-                    <Home className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-muted-foreground text-sm">
-                      Street view not available
+                    <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-2" />
+                    <p className="text-muted-foreground text-sm">Loading street view...</p>
+                  </div>
+                </div>
+              ) : streetViewUrl && !streetViewError ? (
+                <div className="relative group">
+                  <img
+                    src={streetViewUrl}
+                    alt={`Street view of ${property.address}`}
+                    className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-105"
+                    onError={() => setStreetViewError(true)}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute bottom-3 left-3 right-3">
+                      <p className="text-foreground text-sm font-medium truncate flex items-center gap-1">
+                        <MapPin className="w-3 h-3" />
+                        {property.address}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="w-full h-64 bg-gradient-to-br from-secondary/80 to-secondary flex items-center justify-center">
+                  <div className="text-center px-4">
+                    <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Home className="w-8 h-8 text-primary" />
+                    </div>
+                    <p className="text-foreground font-medium text-sm mb-1">Street View Unavailable</p>
+                    <p className="text-muted-foreground text-xs max-w-[200px] mx-auto">
+                      No imagery available for this location
                     </p>
+                    <div className="mt-3 flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                      <MapPin className="w-3 h-3" />
+                      <span className="truncate max-w-[180px]">{property.address}</span>
+                    </div>
                   </div>
                 </div>
               )}
