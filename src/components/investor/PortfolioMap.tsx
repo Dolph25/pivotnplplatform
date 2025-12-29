@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { getStatusColor, createPropertyPopup, add3DBuildings } from '@/lib/maps';
-import { Loader2, Layers, Map as MapIcon, Satellite } from 'lucide-react';
+import { getStatusColor, createPropertyPopup, add3DBuildings, MAPBOX_ACCESS_TOKEN } from '@/lib/maps';
+import { Loader2, Layers, Map as MapIcon, Satellite, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface Property {
@@ -19,7 +19,7 @@ interface Property {
 
 interface PortfolioMapProps {
   properties: Property[];
-  mapboxToken: string;
+  mapboxToken?: string;
   onPropertyClick?: (property: Property) => void;
   height?: string;
   showControls?: boolean;
@@ -36,8 +36,12 @@ export function PortfolioMap({
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [mapError, setMapError] = useState<string | null>(null);
   const [mapStyle, setMapStyle] = useState<'dark' | 'streets' | 'satellite'>('dark');
   const [show3D, setShow3D] = useState(false);
+
+  // Use provided token or fall back to default
+  const activeToken = mapboxToken || MAPBOX_ACCESS_TOKEN;
 
   const styleUrls: Record<string, string> = {
     dark: 'mapbox://styles/mapbox/dark-v11',
@@ -46,33 +50,51 @@ export function PortfolioMap({
   };
 
   useEffect(() => {
-    if (!mapContainer.current || !mapboxToken) return;
-
-    mapboxgl.accessToken = mapboxToken;
-
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: styleUrls[mapStyle],
-      center: [-74.006, 40.7128],
-      zoom: 8,
-      pitch: show3D ? 45 : 0,
-    });
-
-    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
-
-    map.current.on('load', () => {
+    if (!mapContainer.current || !activeToken) {
+      setMapError('No Mapbox token available');
       setIsLoading(false);
-      if (show3D && map.current) {
-        add3DBuildings(map.current);
-      }
-    });
+      return;
+    }
+
+    try {
+      mapboxgl.accessToken = activeToken;
+
+      map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: styleUrls[mapStyle],
+        center: [-74.006, 40.7128],
+        zoom: 8,
+        pitch: show3D ? 45 : 0,
+      });
+
+      map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+      map.current.on('load', () => {
+        setIsLoading(false);
+        setMapError(null);
+        if (show3D && map.current) {
+          add3DBuildings(map.current);
+        }
+      });
+
+      map.current.on('error', (e) => {
+        console.error('Mapbox error:', e);
+        setMapError('Failed to load map. Please check your connection.');
+        setIsLoading(false);
+      });
+
+    } catch (error) {
+      console.error('Map initialization error:', error);
+      setMapError('Failed to initialize map');
+      setIsLoading(false);
+    }
 
     return () => {
       markersRef.current.forEach(marker => marker.remove());
       markersRef.current = [];
       map.current?.remove();
     };
-  }, [mapboxToken, mapStyle, show3D]);
+  }, [activeToken, mapStyle, show3D]);
 
   useEffect(() => {
     if (!map.current || isLoading) return;
@@ -145,6 +167,18 @@ export function PortfolioMap({
     setMapStyle(style);
     setIsLoading(true);
   };
+
+  if (mapError) {
+    return (
+      <div className="relative rounded-lg overflow-hidden border border-border bg-secondary/50 flex items-center justify-center" style={{ height }}>
+        <div className="text-center p-6">
+          <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-3" />
+          <p className="text-foreground font-medium mb-1">Map Unavailable</p>
+          <p className="text-muted-foreground text-sm">{mapError}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative rounded-lg overflow-hidden border border-border" style={{ height }}>

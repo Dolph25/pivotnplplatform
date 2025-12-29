@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { MAPBOX_ACCESS_TOKEN } from '@/lib/maps';
+import { AlertTriangle, Loader2 } from 'lucide-react';
 
 interface PropertyMapProps {
   latitude: number;
@@ -12,15 +14,18 @@ export function PropertyMap({ latitude, longitude, address }: PropertyMapProps) 
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const marker = useRef<mapboxgl.Marker | null>(null);
-  const [mapboxToken, setMapboxToken] = useState<string>('');
-  const [showTokenInput, setShowTokenInput] = useState(true);
-  const [mapError, setMapError] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [mapError, setMapError] = useState<string | null>(null);
 
-  const initializeMap = (token: string) => {
-    if (!mapContainer.current || !token) return;
+  useEffect(() => {
+    if (!mapContainer.current || !MAPBOX_ACCESS_TOKEN) {
+      setMapError('No Mapbox token available');
+      setIsLoading(false);
+      return;
+    }
 
     try {
-      mapboxgl.accessToken = token;
+      mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
 
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
@@ -37,6 +42,8 @@ export function PropertyMap({ latitude, longitude, address }: PropertyMapProps) 
 
       map.current.on('load', () => {
         if (!map.current) return;
+        setIsLoading(false);
+        setMapError(null);
 
         // Add 3D buildings layer
         const layers = map.current.getStyle().layers;
@@ -63,80 +70,40 @@ export function PropertyMap({ latitude, longitude, address }: PropertyMapProps) 
         );
       });
 
+      map.current.on('error', (e) => {
+        console.error('Mapbox error:', e);
+        setMapError('Failed to load map');
+        setIsLoading(false);
+      });
+
       // Add marker
       marker.current = new mapboxgl.Marker({ color: '#ef4444' })
         .setLngLat([longitude, latitude])
         .setPopup(new mapboxgl.Popup().setHTML(`<p class="text-slate-900 font-medium text-sm">${address}</p>`))
         .addTo(map.current);
 
-      setShowTokenInput(false);
-      setMapError('');
     } catch (error) {
       console.error('Map initialization error:', error);
-      setMapError('Invalid Mapbox token. Please check and try again.');
+      setMapError('Failed to initialize map');
+      setIsLoading(false);
     }
-  };
 
-  // Update marker position when coordinates change
-  useEffect(() => {
-    if (map.current && marker.current && !showTokenInput) {
-      marker.current.setLngLat([longitude, latitude]);
-      map.current.flyTo({
-        center: [longitude, latitude],
-        zoom: 15,
-        duration: 1500,
-      });
-    }
-  }, [latitude, longitude, showTokenInput]);
-
-  // Cleanup
-  useEffect(() => {
     return () => {
       map.current?.remove();
     };
-  }, []);
+  }, [latitude, longitude, address]);
 
-  if (showTokenInput) {
+  if (mapError) {
     return (
       <div className="glass-card p-6">
         <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-          <span>🗺️</span> Property Location Map
+          <span>🗺️</span> Property Location
         </h3>
-        <div className="bg-secondary/50 rounded-lg p-4 mb-4">
-          <p className="text-sm text-muted-foreground mb-3">
-            Enter your Mapbox public token to enable the interactive map. Get one free at{' '}
-            <a 
-              href="https://mapbox.com" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-primary hover:underline"
-            >
-              mapbox.com
-            </a>
-          </p>
-          <input
-            type="text"
-            value={mapboxToken}
-            onChange={(e) => setMapboxToken(e.target.value)}
-            placeholder="pk.eyJ1..."
-            className="input-field mb-3"
-          />
-          {mapError && (
-            <p className="text-destructive text-sm mb-3">{mapError}</p>
-          )}
-          <button
-            onClick={() => initializeMap(mapboxToken)}
-            disabled={!mapboxToken}
-            className="btn-primary w-full"
-          >
-            Load Map
-          </button>
-        </div>
-        {/* Placeholder map */}
-        <div className="h-64 bg-secondary rounded-lg flex items-center justify-center">
+        <div className="h-72 bg-secondary rounded-lg flex items-center justify-center">
           <div className="text-center">
-            <span className="text-4xl mb-2 block">📍</span>
-            <p className="text-muted-foreground text-sm">Map preview will appear here</p>
+            <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-3" />
+            <p className="text-foreground font-medium mb-1">Map Unavailable</p>
+            <p className="text-muted-foreground text-sm">{mapError}</p>
           </div>
         </div>
       </div>
@@ -148,7 +115,14 @@ export function PropertyMap({ latitude, longitude, address }: PropertyMapProps) 
       <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
         <span>🗺️</span> Property Location
       </h3>
-      <div ref={mapContainer} className="h-72 rounded-lg overflow-hidden" />
+      <div className="relative h-72 rounded-lg overflow-hidden">
+        {isLoading && (
+          <div className="absolute inset-0 bg-secondary flex items-center justify-center z-10">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        )}
+        <div ref={mapContainer} className="w-full h-full" />
+      </div>
     </div>
   );
 }

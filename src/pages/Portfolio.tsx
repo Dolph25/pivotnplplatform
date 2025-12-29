@@ -22,8 +22,6 @@ const Portfolio = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'map' | 'table'>('map');
-  const [mapboxToken, setMapboxToken] = useState('');
-  const [showTokenInput, setShowTokenInput] = useState(true);
 
   useEffect(() => {
     fetchData();
@@ -73,12 +71,6 @@ const Portfolio = () => {
     setModalOpen(true);
   };
 
-  const handleLoadToken = () => {
-    if (mapboxToken) {
-      setShowTokenInput(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <Header user={user} onSignOut={signOut} />
@@ -99,36 +91,11 @@ const Portfolio = () => {
           <InvestorMetrics />
         </div>
 
-        {/* Map Token Input */}
-        {showTokenInput && (
-          <div className="glass-card p-6 mb-8">
-            <h3 className="text-lg font-semibold mb-3">Enable Portfolio Map</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Enter your Mapbox public token to enable interactive maps.{' '}
-              <a href="https://mapbox.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                Get a token
-              </a>
-            </p>
-            <div className="flex gap-3">
-              <Input
-                value={mapboxToken}
-                onChange={(e) => setMapboxToken(e.target.value)}
-                placeholder="pk.eyJ1..."
-                className="max-w-md"
-              />
-              <Button onClick={handleLoadToken} disabled={!mapboxToken}>
-                Load Map
-              </Button>
-            </div>
-          </div>
-        )}
-
         {/* Portfolio Map */}
-        {!showTokenInput && mapboxToken && (
+        {viewMode === 'map' && (
           <div className="mb-8">
             <PortfolioMap
               properties={filteredProperties}
-              mapboxToken={mapboxToken}
               onPropertyClick={handlePropertyClick}
               height="500px"
             />
@@ -189,7 +156,6 @@ const Portfolio = () => {
         property={selectedProperty}
         open={modalOpen}
         onOpenChange={setModalOpen}
-        mapboxToken={mapboxToken}
       />
 
       <footer className="border-t border-border mt-12 py-6">
