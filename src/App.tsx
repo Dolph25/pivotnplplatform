@@ -10,6 +10,7 @@ import Import from "./pages/Import";
 import Documents from "./pages/Documents";
 import Portfolio from "./pages/Portfolio";
 import Invest from "./pages/Invest";
+import Marketplace from "./pages/Marketplace";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/" element={<Invest />} />
           <Route path="/analyze" element={<Index />} />
           <Route path="/invest" element={<Invest />} />
+          <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/import" element={<Import />} />
