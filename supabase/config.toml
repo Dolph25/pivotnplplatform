@@ -9,5 +9,8 @@ verify_jwt = false
 [functions.generate-property-description]
 verify_jwt = false
 
+[functions.import-properties]
+verify_jwt = false
+
 [functions.paypal-webhook]
 verify_jwt = false
