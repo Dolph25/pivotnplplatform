@@ -22,10 +22,12 @@ import {
   Sparkles,
   FileDown,
   Navigation,
+  AlertTriangle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { formatCurrency, formatPercent } from '@/lib/maps';
+import { formatCurrency, formatPercent, MAPBOX_ACCESS_TOKEN, GOOGLE_MAPS_API_KEY } from '@/lib/maps';
+
 
 interface Property {
   id: string;
@@ -56,48 +58,59 @@ interface PropertyDetailModalProps {
   property: Property | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  mapboxToken?: string;
-  googleMapsKey?: string;
 }
 
 export function PropertyDetailModal({
   property,
   open,
   onOpenChange,
-  mapboxToken,
-  googleMapsKey,
 }: PropertyDetailModalProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [aiDescription, setAiDescription] = useState<string>('');
   const [isLoadingAI, setIsLoadingAI] = useState(false);
   const [streetViewError, setStreetViewError] = useState(false);
+  const [mapError, setMapError] = useState(false);
 
   useEffect(() => {
-    if (!open || !property?.latitude || !property?.longitude || !mapboxToken || !mapContainer.current) {
+    if (!open || !property?.latitude || !property?.longitude || !mapContainer.current) {
       return;
     }
 
-    mapboxgl.accessToken = mapboxToken;
+    if (!MAPBOX_ACCESS_TOKEN) {
+      setMapError(true);
+      return;
+    }
 
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/dark-v11',
-      center: [property.longitude, property.latitude],
-      zoom: 15,
-      pitch: 45,
-    });
+    try {
+      mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
 
-    new mapboxgl.Marker({ color: '#06b6d4' })
-      .setLngLat([property.longitude, property.latitude])
-      .addTo(map.current);
+      map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/dark-v11',
+        center: [property.longitude, property.latitude],
+        zoom: 15,
+        pitch: 45,
+      });
 
-    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+      new mapboxgl.Marker({ color: '#06b6d4' })
+        .setLngLat([property.longitude, property.latitude])
+        .addTo(map.current);
+
+      map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+      map.current.on('error', () => {
+        setMapError(true);
+      });
+    } catch (error) {
+      console.error('Map error:', error);
+      setMapError(true);
+    }
 
     return () => {
       map.current?.remove();
     };
-  }, [open, property, mapboxToken]);
+  }, [open, property]);
 
   useEffect(() => {
     if (open && property && !property.ai_analysis && !aiDescription) {
@@ -143,10 +156,10 @@ export function PropertyDetailModal({
 
   if (!property) return null;
 
-  const streetViewUrl = googleMapsKey
+  const streetViewUrl = GOOGLE_MAPS_API_KEY
     ? `https://maps.googleapis.com/maps/api/streetview?size=600x400&location=${encodeURIComponent(
         `${property.address}, ${property.city}, ${property.state}`
-      )}&fov=90&heading=0&pitch=0&key=${googleMapsKey}`
+      )}&fov=90&heading=0&pitch=0&key=${GOOGLE_MAPS_API_KEY}`
     : null;
 
   const getStatusClass = (status: string) => {
@@ -285,16 +298,19 @@ export function PropertyDetailModal({
           </TabsContent>
 
           <TabsContent value="location" className="mt-4">
-            <div
-              ref={mapContainer}
-              className="w-full h-80 rounded-lg overflow-hidden border border-border"
-            />
-            {!mapboxToken && (
-              <div className="mt-4 p-4 bg-secondary rounded-lg text-center">
-                <p className="text-muted-foreground text-sm">
-                  Configure Mapbox token to enable interactive map
-                </p>
+            {mapError ? (
+              <div className="w-full h-80 rounded-lg overflow-hidden border border-border bg-secondary flex items-center justify-center">
+                <div className="text-center">
+                  <AlertTriangle className="w-10 h-10 text-amber-500 mx-auto mb-2" />
+                  <p className="text-foreground font-medium text-sm">Map Unavailable</p>
+                  <p className="text-muted-foreground text-xs">Unable to load map</p>
+                </div>
               </div>
+            ) : (
+              <div
+                ref={mapContainer}
+                className="w-full h-80 rounded-lg overflow-hidden border border-border"
+              />
             )}
           </TabsContent>
         </Tabs>
