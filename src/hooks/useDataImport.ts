@@ -2,46 +2,25 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
+import Papa from 'papaparse';
 
 // Helper to detect if file is CSV
 const isCSVFile = (file: File): boolean => {
   return file.name.toLowerCase().endsWith('.csv') || file.type === 'text/csv';
 };
 
-// Parse CSV text manually for better control
+// Robust CSV parsing (handles quotes, embedded newlines, delimiter detection, BOM)
 const parseCSVText = (text: string): any[][] => {
-  const lines = text.split(/\r\n|\n/);
-  const result: any[][] = [];
-  
-  for (const line of lines) {
-    if (line.trim() === '') continue;
-    
-    const row: any[] = [];
-    let inQuotes = false;
-    let currentValue = '';
-    
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
-      
-      if (char === '"') {
-        if (inQuotes && line[i + 1] === '"') {
-          currentValue += '"';
-          i++;
-        } else {
-          inQuotes = !inQuotes;
-        }
-      } else if (char === ',' && !inQuotes) {
-        row.push(currentValue.trim());
-        currentValue = '';
-      } else {
-        currentValue += char;
-      }
-    }
-    row.push(currentValue.trim());
-    result.push(row);
+  const parsed = Papa.parse<string[]>(text, {
+    skipEmptyLines: 'greedy',
+    delimiter: '',
+  });
+
+  if (parsed.errors?.length) {
+    throw new Error(parsed.errors[0]?.message || 'Invalid CSV file');
   }
-  
-  return result;
+
+  return (parsed.data || []) as any[][];
 };
 
 interface ColumnMapping {
@@ -178,7 +157,7 @@ export function useDataImport() {
 
     } catch (error) {
       console.error('Parse error:', error);
-      toast.error('Failed to parse file');
+      toast.error(error instanceof Error ? error.message : 'Failed to parse file');
       throw error;
     } finally {
       setParsing(false);
@@ -250,81 +229,89 @@ export function useDataImport() {
     const result: ImportResult = { success: 0, failed: 0, errors: [] };
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error('You must be signed in to import data.');
+      }
 
-      // Process rows in batches
-      const batchSize = 50;
-      
-      for (let batchStart = 0; batchStart < parsedData.length; batchStart += batchSize) {
-        const batch = parsedData.slice(batchStart, batchStart + batchSize);
-        const rowsToInsert: any[] = [];
+      const rowsToImport: any[] = [];
 
-        for (let i = 0; i < batch.length; i++) {
-          const row = batch[i];
-          const rowIndex = batchStart + i;
-          
-          const mappedRow: Record<string, any> = {
-            created_by: user?.id,
-            is_active: true,
-            deal_stage: 'Active'
-          };
+      for (let rowIndex = 0; rowIndex < parsedData.length; rowIndex++) {
+        const row = parsedData[rowIndex];
 
-          columnMappings.forEach(mapping => {
-            const value = row[mapping.sourceColumn];
-            mappedRow[mapping.targetColumn] = parseValue(value, mapping.targetColumn);
-          });
+        const mappedRow: Record<string, any> = {
+          created_by: user.id,
+          last_modified_by: user.id,
+          is_active: true,
+          deal_stage: 'Active',
+        };
 
-          // Ensure required fields
-          if (!mappedRow.property_id) {
-            mappedRow.property_id = `IMPORT-${Date.now()}-${rowIndex}`;
-          }
-          if (!mappedRow.source) {
-            mappedRow.source = 'Data Import';
-          }
-          if (!mappedRow.state) {
-            mappedRow.state = 'NY'; // Default state
-          }
+        columnMappings.forEach((mapping) => {
+          const value = row[mapping.sourceColumn];
+          mappedRow[mapping.targetColumn] = parseValue(value, mapping.targetColumn);
+        });
 
-          // Validate required fields
-          if (!mappedRow.address || !mappedRow.city || !mappedRow.zip_code) {
-            result.failed++;
-            result.errors.push(`Row ${rowIndex + 1}: Missing required fields (address, city, or zip_code)`);
-            continue;
-          }
-
-          rowsToInsert.push(mappedRow);
+        // Ensure required fields
+        if (!mappedRow.property_id) {
+          mappedRow.property_id = `IMPORT-${Date.now()}-${rowIndex}`;
+        }
+        if (!mappedRow.source) {
+          mappedRow.source = 'Data Import';
+        }
+        if (!mappedRow.state) {
+          mappedRow.state = 'NY';
         }
 
-        if (rowsToInsert.length > 0) {
-          const { data, error } = await supabase
-            .from('properties')
-            .upsert(rowsToInsert as any, { 
-              onConflict: 'property_id',
-              ignoreDuplicates: false 
-            })
-            .select('id');
-
-          if (error) {
-            result.failed += rowsToInsert.length;
-            result.errors.push(`Batch starting at row ${batchStart + 1}: ${error.message}`);
-          } else {
-            result.success += data?.length || 0;
-          }
+        // Validate required fields
+        if (!mappedRow.address || !mappedRow.city || !mappedRow.zip_code) {
+          result.failed++;
+          result.errors.push(`Row ${rowIndex + 1}: Missing required fields (address, city, or zip_code)`);
+          continue;
         }
+
+        rowsToImport.push(mappedRow);
       }
 
-      if (result.success > 0) {
-        toast.success(`Imported ${result.success} properties`);
+      if (rowsToImport.length === 0) {
+        toast.error('No valid rows to import.');
+        return result;
       }
-      if (result.failed > 0) {
-        toast.error(`Failed to import ${result.failed} rows`);
+
+      // Use backend import function (more reliable: handles larger payloads + avoids client-side permission issues)
+      type ImportFnResponse = {
+        success: boolean;
+        inserted: number;
+        total: number;
+        errors?: string[];
+      };
+
+      const { data, error } = await supabase.functions.invoke<ImportFnResponse>('import-properties', {
+        body: { properties: rowsToImport },
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Import failed');
       }
+
+      const inserted = data?.inserted ?? 0;
+      const total = data?.total ?? rowsToImport.length;
+
+      result.success += inserted;
+      const backendFailed = Math.max(0, total - inserted);
+      if (backendFailed > 0) result.failed += backendFailed;
+
+      if (data?.errors?.length) {
+        result.errors.push(...data.errors);
+      }
+
+      if (result.success > 0) toast.success(`Imported ${result.success} properties`);
+      if (result.failed > 0) toast.error(`Failed to import ${result.failed} rows`);
 
       return result;
 
     } catch (error) {
       console.error('Import error:', error);
-      toast.error('Import failed');
+      toast.error(error instanceof Error ? error.message : 'Import failed');
       throw error;
     } finally {
       setImporting(false);

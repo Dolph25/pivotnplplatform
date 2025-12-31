@@ -36,16 +36,28 @@ const Import = () => {
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      setFile(selectedFile);
-      setImportResult(null);
+    if (!selectedFile) return;
+
+    setFile(selectedFile);
+    setImportResult(null);
+
+    try {
       await parseFile(selectedFile);
+    } catch {
+      // If parsing fails, reset state so the UI doesn't get stuck
+      setFile(null);
+      reset();
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
   const handleImport = async () => {
-    const result = await importData();
-    setImportResult(result);
+    try {
+      const result = await importData();
+      setImportResult(result);
+    } catch {
+      // importData already shows a toast; keep UI on mapping screen
+    }
   };
 
   const handleReset = () => {
@@ -187,16 +199,27 @@ const Import = () => {
                   <p className="text-sm text-muted-foreground">
                     {columnMappings.length} columns mapped
                   </p>
-                  <Button onClick={handleImport} disabled={importing || columnMappings.length === 0}>
-                    {importing ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Importing...
-                      </>
-                    ) : (
-                      <>Import {parsedData.length} Properties</>
-                    )}
-                  </Button>
+                  {(() => {
+                    const required = ['address', 'city', 'zip_code'];
+                    const requiredMapped = required.every((r) => columnMappings.some((m) => m.targetColumn === r));
+
+                    return (
+                      <Button
+                        onClick={handleImport}
+                        disabled={importing || columnMappings.length === 0 || !requiredMapped}
+                        title={!requiredMapped ? 'Map address, city, and zip_code to enable import' : undefined}
+                      >
+                        {importing ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Importing...
+                          </>
+                        ) : (
+                          <>Import {parsedData.length} Properties</>
+                        )}
+                      </Button>
+                    );
+                  })()}
                 </div>
               </CardContent>
             </Card>
