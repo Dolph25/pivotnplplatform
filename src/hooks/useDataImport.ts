@@ -3,6 +3,47 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 
+// Helper to detect if file is CSV
+const isCSVFile = (file: File): boolean => {
+  return file.name.toLowerCase().endsWith('.csv') || file.type === 'text/csv';
+};
+
+// Parse CSV text manually for better control
+const parseCSVText = (text: string): any[][] => {
+  const lines = text.split(/\r\n|\n/);
+  const result: any[][] = [];
+  
+  for (const line of lines) {
+    if (line.trim() === '') continue;
+    
+    const row: any[] = [];
+    let inQuotes = false;
+    let currentValue = '';
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      
+      if (char === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          currentValue += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        row.push(currentValue.trim());
+        currentValue = '';
+      } else {
+        currentValue += char;
+      }
+    }
+    row.push(currentValue.trim());
+    result.push(row);
+  }
+  
+  return result;
+};
+
 interface ColumnMapping {
   sourceColumn: string;
   targetColumn: string;
@@ -74,17 +115,26 @@ export function useDataImport() {
   const parseFile = useCallback(async (file: File) => {
     setParsing(true);
     try {
-      const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data);
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+      let jsonData: any[][];
+      
+      // Handle CSV files with custom parser for better reliability
+      if (isCSVFile(file)) {
+        const text = await file.text();
+        jsonData = parseCSVText(text);
+      } else {
+        // Use xlsx for Excel files
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data);
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+      }
 
       if (jsonData.length < 2) {
         throw new Error('File must have at least a header row and one data row');
       }
 
-      const headers = jsonData[0] as string[];
+      const headers = (jsonData[0] as string[]).map(h => String(h || '').trim());
       const rows = jsonData.slice(1)
         .filter(row => row.some(cell => cell !== null && cell !== undefined && cell !== ''))
         .map(row => {
