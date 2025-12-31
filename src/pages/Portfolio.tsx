@@ -12,7 +12,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, MapPin, List } from 'lucide-react';
+import { Search, MapPin, List, Download } from 'lucide-react';
+import { exportPropertiesToCSV, exportPropertiesToExcel } from '@/utils/dataExport';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const Portfolio = () => {
   const { user, signOut } = useAuth();
@@ -164,6 +171,25 @@ const Portfolio = () => {
                     className="pl-9 w-64"
                   />
                 </div>
+                
+                {/* Export Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Download className="w-4 h-4 mr-2" />
+                      Export
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => exportPropertiesToCSV(filteredProperties)}>
+                      Export as CSV
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => exportPropertiesToExcel(filteredProperties)}>
+                      Export as Excel
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                
                 <div className="flex border border-border rounded-lg overflow-hidden">
                   <Button
                     variant={viewMode === 'map' ? 'default' : 'ghost'}
