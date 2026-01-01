@@ -178,6 +178,8 @@ serve(async (req) => {
         source: p.source || p.source_file || 'CSV Import',
         source_loan_number: p.source_loan_number || null,
         deal_stage: p.deal_stage || 'Active',
+        created_by: userId,
+        last_modified_by: userId,
         address: p.address,
         city: p.city,
         state: p.state || 'NY',
