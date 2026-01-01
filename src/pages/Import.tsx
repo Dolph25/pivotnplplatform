@@ -69,8 +69,8 @@ const Import = () => {
     }
   };
 
-  const getMappingForSource = (sourceCol: string) => {
-    return columnMappings.find(m => m.sourceColumn === sourceCol)?.targetColumn || '';
+  const getMappingForSource = (sourceCol: string): string | undefined => {
+    return columnMappings.find(m => m.sourceColumn === sourceCol)?.targetColumn;
   };
 
   if (authLoading) {
@@ -179,13 +179,15 @@ const Import = () => {
                       </div>
                       <Select
                         value={getMappingForSource(sourceCol)}
-                        onValueChange={(value) => updateMapping(sourceCol, value)}
+                        onValueChange={(value) =>
+                          updateMapping(sourceCol, value === '__skip__' ? '' : value)
+                        }
                       >
                         <SelectTrigger className="w-48">
                           <SelectValue placeholder="Select field..." />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">-- Skip --</SelectItem>
+                          <SelectItem value="__skip__">-- Skip --</SelectItem>
                           {targetColumns.map((col) => (
                             <SelectItem key={col} value={col}>{col}</SelectItem>
                           ))}
